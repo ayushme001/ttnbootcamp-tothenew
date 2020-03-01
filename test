@@ -1,0 +1,9 @@
+aws s3 cp \
+       s3://ayush-s3/ \
+       s3://ayush-s3/ \
+       --exclude '*' \
+       --include '*.txt' \
+       --no-guess-mime-type \
+       --content-type="text/plain" \
+       --metadata-directive="REPLACE" \
+       --recursive
