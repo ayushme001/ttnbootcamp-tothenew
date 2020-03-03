@@ -1,4 +1,10 @@
 #!/bin/bash
+if [ $1 == "-h" ]
+then
+	less manual_calculator
+	exit 0
+fi
+
 echo "Enter Two numbers : "
 read a 
 read b 
@@ -15,7 +21,7 @@ case $ch in
   ;; 
   2)res=$(( $a - $b ))
   ;; 
-  3)res=$(( $a \* $b )) 
+  3)res=$(( $a * $b )) 
   ;; 
   4)res=$(( $a / $b )) 
   ;; 
