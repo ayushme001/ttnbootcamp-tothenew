@@ -5,14 +5,14 @@ pipeline {
             steps {
                 echo 'building docker'
                 sh 'commit_id=$(git rev-parse HEAD)'
-		sh 'docker build -t 187632318301.dkr.ecr.us-east-1.amazonaws.com/ayush-ecr:$commit_id .'
+		sh 'docker build -t 187632318301.dkr.ecr.us-east-1.amazonaws.com/ayush-ecr:$(git rev-parse HEAD) .'
             }
         }
         stage('pushing image to ECR') {
             steps {
                 echo 'pushinfg image'
                 sh 'commit_id=$(git rev-parse HEAD)'
-		sh '	docker push 187632318301.dkr.ecr.us-east-1.amazonaws.com/ayush-ecr:$commit_id'
+		sh '	docker push 187632318301.dkr.ecr.us-east-1.amazonaws.com/ayush-ecr:$(git rev-parse HEAD)'
             }
         }
         stage('Deploying on eks') {
