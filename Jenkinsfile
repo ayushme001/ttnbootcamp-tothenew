@@ -15,6 +15,9 @@ pipeline {
         }
         stage('Deploying on eks') {
             steps {
+		catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    sh "exit 1"
+		}
                 echo 'deploying on eks'
 		sh 'kubectl create -f deployment.yml'
 		sh 'sleep 10'
