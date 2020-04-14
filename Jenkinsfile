@@ -25,16 +25,11 @@ pipeline {
 			sh 'kubectl describe pods'
             }
         }
-	post{
-	   success {  
-                echo 'This will run only if successful'  
-		emailext body: 'Its is a success', recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider']], subject: 'success build'
-         	}
-	   failure {
-		echo ' this will run of failed'
-		emailext body: 'Its a failed build', recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider']], subject: 'Failed build'
-		}	 
-    	}
+	post {
+        always {
+            emailext body: 'A Test EMail', recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider']], subject: 'Test'
+        }
+    }
     }
 }
 
