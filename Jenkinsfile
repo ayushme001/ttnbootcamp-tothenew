@@ -20,7 +20,7 @@ pipeline {
 		sh 'sleep 10'
 		sh '/usr/local/bin/kubectl get pods'
 		sh '/usr/local/bin/kubectl create -f loadbalancer.yml'
-		sh 'kubectl get service/react-lb |  awk {'print $1" " $2 " " $4 " " $5'} | column -t'
+		sh 'kubectl get service/react-lb |  awk {'print $1" " $2 " " $4 " " $5'}'
             }
         }
     }
