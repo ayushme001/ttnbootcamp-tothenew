@@ -26,12 +26,14 @@ pipeline {
             }
         }
 	post {
-           always {
-                emailext body: "${currentBuild.currentResult}: Job ${env.JOB_NAME} build ${env.BUILD_NUMBER}",
-                recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider']],
-                subject: "Jenkins Build ${currentBuild.currentResult}: Job ${env.JOB_NAME}"
-            
-        	}
+	   success {  
+                echo 'This will run only if successful'  
+		emailext body: 'Its is a success', recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider']], subject: 'success build'
+         	}
+	   failure {
+		echo ' this will run of failed'
+		emailext body: 'Its a failed build', recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider']], subject: 'Failed build'
+		}	 
     	}
     }
 
