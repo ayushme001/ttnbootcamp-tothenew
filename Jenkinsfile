@@ -25,7 +25,7 @@ pipeline {
 			sh 'kubectl describe pods'
             }
         }
-	post {
+	post{
 	   success {  
                 echo 'This will run only if successful'  
 		emailext body: 'Its is a success', recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider']], subject: 'success build'
@@ -36,6 +36,5 @@ pipeline {
 		}	 
     	}
     }
-
 }
 
