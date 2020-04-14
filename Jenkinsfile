@@ -18,12 +18,12 @@ pipeline {
         stage('Deploying on eks') {
             steps {
                 echo 'deploying on eks'
-		sh 'kubectl create -f deployment.yml'
+		sh '/usr/local/bin/kubectl create -f deployment.yml'
 		sh 'sleep 10'
-		sh 'kubectl get pods'
-		sh 'kubectl create -f loadbalancer.yml'
-		sh 'kubectl get pods'
-		sh 'kubectl get service/react-lb |  awk {'print $1" " $2 " " $4 " " $5'} | column -t'
+		sh '/usr/local/bin/kubectl get pods'
+		sh '/usr/local/bin/kubectl create -f loadbalancer.yml'
+		sh '/usr/local/bin/kubectl get pods'
+		sh '/usr/local/bin/kubectl get service/react-lb |  awk {'print $1" " $2 " " $4 " " $5'} | column -t'
             }
         }
     }
