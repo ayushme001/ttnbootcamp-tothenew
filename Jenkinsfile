@@ -15,17 +15,22 @@ pipeline {
         }
         stage('Deploying on eks') {
             steps {
-		catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                    sh "exit 1"
-		}
-                echo 'deploying on eks'
-		sh 'kubectl create -f deployment.yml'
-		sh 'sleep 10'
-		sh 'kubectl get pods'
-		sh 'kubectl create -f loadbalancer.yml'
-		sh 'sleep 5'
-		sh 'kubectl get svc'
-		sh 'kubectl describe pods'
+		script {
+		     try {
+                	echo 'deploying on eks'
+			sh 'kubectl create -f deployment.yml'
+			sh 'sleep 10'
+			sh 'kubectl get pods'
+			sh 'kubectl create -f loadbalancer.yml'
+			sh 'sleep 5'
+			sh 'kubectl get svc'
+			sh 'kubectl describe pods'
+			} catch (e) {
+                        currentBuild.result = 'FAILURE'
+                        slackHelper.buildGenericJobFailureNotificationMessage()
+                        throw e
+                    }
+		} 
             }
         }
     }
