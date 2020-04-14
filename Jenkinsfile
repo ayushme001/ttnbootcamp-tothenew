@@ -15,8 +15,6 @@ pipeline {
         }
         stage('Deploying on eks') {
             steps {
-		script {
-		     try {
                 	echo 'deploying on eks'
 			sh 'kubectl create -f deployment.yml'
 			sh 'exit 0'
@@ -27,18 +25,11 @@ pipeline {
 			sh 'kubectl get svc'
 			sh 'kubectl describe pods'
 			sh 'exit 0'
-			} catch (e) {
-                        currentBuild.result = 'FAILURE'
-                        throw e
-                    }
-		} 
             }
         }
 	post {
-        always {
-            echo 'sending email'
-            
-            emailext body: "${currentBuild.currentResult}: Job ${env.JOB_NAME} build ${env.BUILD_NUMBER}\n",
+           always {
+            emailext body: "${currentBuild.currentResult}: Job ${env.JOB_NAME} build ${env.BUILD_NUMBER}",
                 recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider']],
                 subject: "Jenkins Build ${currentBuild.currentResult}: Job ${env.JOB_NAME}"
             
