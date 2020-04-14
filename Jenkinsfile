@@ -19,15 +19,16 @@ pipeline {
 		     try {
                 	echo 'deploying on eks'
 			sh 'kubectl create -f deployment.yml'
+			sh 'exit 0'
 			sh 'sleep 10'
 			sh 'kubectl get pods'
 			sh 'kubectl create -f loadbalancer.yml'
 			sh 'sleep 5'
 			sh 'kubectl get svc'
 			sh 'kubectl describe pods'
+			sh 'exit 0'
 			} catch (e) {
                         currentBuild.result = 'FAILURE'
-                        slackHelper.buildGenericJobFailureNotificationMessage()
                         throw e
                     }
 		} 
