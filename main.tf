@@ -210,7 +210,7 @@ resource "aws_launch_configuration" "cluster-lc" {
     create_before_destroy = true
   }
 }
-
+/*
 resource "aws_autoscaling_group" "cluster-asg" {
   desired_capacity     = 1
   launch_configuration = aws_launch_configuration.cluster-lc.id
@@ -231,7 +231,7 @@ resource "aws_autoscaling_group" "cluster-asg" {
     propagate_at_launch = true
   }
 }
-
+*/
 locals {
   config_map_aws_auth = <<CONFIGMAPAWSAUTH
 
@@ -255,42 +255,6 @@ CONFIGMAPAWSAUTH
 output "config_map_aws_auth" {
   value = local.config_map_aws_auth
 }
-/*
-resource "null_resource" "config-kubectl" {
-  provisioner "local-exec" {
-    command = "aws eks --region us-east-1 update-kubeconfig --name cluster"
- #depends_on = ["aws_autoscaling_group.cluster-asg"]
-}
-triggers = {
-    "before" = "${aws_autoscaling_group.cluster-asg}"
- 
-  }
-}
-
-resource "null_resource" "deploy-kubectl" {
-  provisioner "local-exec" {
-    command = "kubectl apply -f deployment.yml"
-    #depends_on = ["null_resource.config-kubectl"]
-}
-triggers = {
-    "before" = "${null_resource.config-kubectl}"
- 
-  }
-}
-
-resource "null_resource" "lb-kubectl" {
-  provisioner "local-exec" {
-    command = "kubectl apply -f loadbalancer.yml"
-    #depends_on = ["null_resource.deploy-kubectl"]
-}
-triggers = {
-    "before" = "${null_resource.deploy-kubectl}"
- 
-  }
-}
-
-*/
-
 
 resource "aws_eks_node_group" "node" {
   cluster_name    = aws_eks_cluster.cluster.name
@@ -304,25 +268,46 @@ resource "aws_eks_node_group" "node" {
     min_size     = 1
   }
 }
-/*
+
+resource "aws_elb" "bar"{
+  count = var.enable_route53 ? 1 : 0
+
+  listener {
+    instance_port     = var.protocol
+    instance_protocol = "TCP"
+    lb_port           = 80
+    lb_protocol       = "TCP"
+  }
+
+       tags                        = {
+           "kubernetes.io/cluster/${var.cluster-name}" = "owned"
+           "kubernetes.io/service-name"                = "default/loadbalancer"
+        }
+cross_zone_load_balancing   = false
+}
+
+
+
 resource "aws_route53_zone" "private" {
-  name = "example.com"
+  count = var.enable_route53 ? 1 : 0
+  name = "ttn-internal.com"
 
   vpc {
-    vpc_id = aws_vpc.vpc.id
+    vpc_id = aws_vpc.ayush-vpc.id
   }
 }
 
 
 resource "aws_route53_record" "www" {
-  zone_id = "${aws_route53_zone.primary.zone_id}"
-  name    = "example.com"
+  count = var.enable_route53 ? 1 : 0
+  zone_id = aws_route53_zone.private[count.index].zone_id
+  name    = "loadbalancer.com"
   type    = "A"
 
   alias {
-    name                   = "${aws_elb.main.dns_name}"
-    zone_id                = "${aws_elb.main.zone_id}"
+    name                   = aws_elb.bar[count.index].dns_name
+    zone_id                = aws_elb.bar[count.index].zone_id
     evaluate_target_health = true
   }
 }
-*/
+
