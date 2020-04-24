@@ -1,0 +1,222 @@
+Resources:
+#EC2 INSTANCE LAUNCH
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      KeyName: ayush
+      SecurityGroupIds: 
+        - sg-895c5de7
+      SubnetId: subnet-dc5d2fa6
+      ImageId: ami-0fc20dd1da406780b
+      Tags:
+        - Key: Name
+          Value: CF-EC2
+        - Key: Owner
+          Value: Ayush
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash
+            echo "update"
+            apt update -y
+            echo "install nginx"
+            apt install -y nginx
+            echo "install python setup-tools"
+            apt install -y python-setuptools 
+            echo "mkdir"
+            mkdir -p /opt/aws/bin
+            echo "download-s3"
+            wget https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
+            echo "python easy_install"
+            python /usr/lib/python2.7/dist-packages/easy_install.py --script-dir /opt/aws/bin aws-cfn-bootstrap-latest.tar.gz
+            echo "cnf-innit"
+            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --region ${AWS::Region} --resource Ec2Instance --configsets SetupEnvironment,UpdateEnvironment
+            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --region ${AWS::Region} --resource Ec2Instance
+
+    Metadata:
+      AWS::CloudFormation::Init:
+        
+        configSets:
+          SetupEnvironment:
+            - setupCfnHup
+          UpdateEnvironment:
+            - updateHostsFile
+
+        setupCfnHup:
+          files:
+            '/var/www/html/index.html':
+              content: !Sub  |
+                <h1>Deployed via Cloud formation</h1> 
+              mode: '000644'
+              owner: root
+              group: root
+
+            '/etc/cfn/cfn-hup.conf':
+              content: !Sub |
+                [main]
+                stack=${AWS::StackId}
+                region=${AWS::Region}
+                interval=1
+              mode: '000400'
+              owner: root
+              group: root      
+          
+            '/etc/cfn/hooks.d/cfn-auto-reloader.conf':
+              content: !Sub |
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.Ec2Instance.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=Ec2Instance --configsets UpdateEnvironment
+                runas=root
+              mode: '000400'
+              owner: root
+              group: root
+
+            '/lib/systemd/system/cfn-hup.service':
+              content: !Sub |
+                [Unit]
+                Description=cfn-hup daemon
+                [Service]
+                Type=simple
+                ExecStart=/opt/aws/bin/cfn-hup
+                Restart=always
+                [Install]
+                WantedBy=multi-user.target
+              mode: '000400'
+              owner: root
+              group: root
+
+          commands: 
+            01enable_cfn_hup:
+              command : systemctl enable cfn-hup.service
+            02start_cfn_hup:
+              command : systemctl start cfn-hup.service
+
+        updateHostsFile:
+          commands:
+            reload_nginx:
+              command: nginx -s reload
+
+
+#AUTOSCALING CONFIGURATION
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: CF-autoscaling
+      LaunchConfigurationName: !Ref 'LaunchConfig'
+      AvailabilityZones: 
+        - us-east-2b
+        - us-east-2a
+      MaxSize: 2
+      MinSize: 1
+      DesiredCapacity: 1
+      Tags:
+      - Key: Name
+        Value: CF-EC2
+        PropagateAtLaunch: "true"
+      - Key: Owner
+        Value: Ayush
+        PropagateAtLaunch: "true"
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MaxBatchSize: '1'
+        MinInstancesInService: '1'
+        PauseTime: PT15M
+        WaitOnResourceSignals: 'true'
+
+#LAUNCH COUNFIGURATION FOR AUTOSCALING
+
+  LaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      InstanceType: t2.micro
+      KeyName: ayush
+      SecurityGroups: 
+        - sg-895c5de7
+      ImageId: ami-0fc20dd1da406780b
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash
+            echo "update"
+            apt update -y
+            echo "install nginx"
+            echo "this is for rolling update"       #for rolling upddate
+            apt install -y nginx
+            echo "install python setup-tools"
+            apt install -y python-setuptools 
+            echo "mkdir"
+            mkdir -p /opt/aws/bin
+            echo "download-s3"
+            wget https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
+            echo "python easy_install"
+            python /usr/lib/python2.7/dist-packages/easy_install.py --script-dir /opt/aws/bin aws-cfn-bootstrap-latest.tar.gz
+            echo "cnf-innit"
+            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --region ${AWS::Region} --resource LaunchConfig --configsets SetupEnvironment,UpdateEnvironment
+            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --region ${AWS::Region} --resource AutoScalingGroup
+
+    Metadata:
+      AWS::CloudFormation::Init:
+        
+        configSets:
+          SetupEnvironment:
+            - setupCfnHup
+          UpdateEnvironment:
+            - updateHostsFile
+
+        setupCfnHup:
+          files:
+            '/var/www/html/index.html':
+              content: !Sub  |
+                <h1>Deployed via Cloud formation updated</h1> 
+              mode: '000644'
+              owner: root
+              group: root
+
+            '/etc/cfn/cfn-hup.conf':
+              content: !Sub |
+                [main]
+                stack=${AWS::StackId}
+                region=${AWS::Region}
+                interval=1
+              mode: '000400'
+              owner: root
+              group: root      
+          
+            '/etc/cfn/hooks.d/cfn-auto-reloader.conf':
+              content: !Sub |
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.Ec2Instance.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=LaunchConfig --configsets UpdateEnvironment
+                runas=root
+              mode: '000400'
+              owner: root
+              group: root
+
+            '/lib/systemd/system/cfn-hup.service':
+              content: !Sub |
+                [Unit]
+                Description=cfn-hup daemon
+                [Service]
+                Type=simple
+                ExecStart=/opt/aws/bin/cfn-hup
+                Restart=always
+                [Install]
+                WantedBy=multi-user.target
+              mode: '000400'
+              owner: root
+              group: root
+
+          commands: 
+            01enable_cfn_hup:
+              command : systemctl enable cfn-hup.service
+            02start_cfn_hup:
+              command : systemctl start cfn-hup.service
+
+        updateHostsFile:
+          commands:
+            reload_nginx:
+              command: nginx -s reload
