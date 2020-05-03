@@ -1,13 +1,21 @@
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+  VPCids:
+    Type: AWS::EC2::VPC::Id
+  Subneids:
+    Type: AWS::EC2::Subnet::Id
+
 Resources:
 #EC2 INSTANCE LAUNCH
   Ec2Instance:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: t2.micro
-      KeyName: ayush
+      KeyName: KeyName
       SecurityGroupIds: 
         - sg-895c5de7
-      SubnetId: subnet-dc5d2fa6
+      SubnetId: Subnetids
       ImageId: ami-0fc20dd1da406780b
       Tags:
         - Key: Name
